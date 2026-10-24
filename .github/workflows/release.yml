@@ -28,10 +28,14 @@ jobs:
     environment: release
     strategy:
       fail-fast: false
+      # 只构建 Nokia XG-040G-MD（an7581 单设备配置）。
+      # 需要恢复多设备或 AN7583（XG-040G-MF）时，按下面格式加回条目：
+      #   - { target: an7581, config: configs/an7581.config }
+      #   - { target: an7583, config: configs/an7583.config }
       matrix:
-        target:
-          - an7581
-          - an7583
+        include:
+          - target: an7581
+            config: configs/an7581-nokia_xg-040g-md-ubi.config
 
     steps:
       - uses: actions/checkout@v6
@@ -83,7 +87,7 @@ jobs:
       - name: Configure ${{ matrix.target }}
         run: |
           ./scripts/kconfig.pl + \
-            "configs/${{ matrix.target }}.config" \
+            "${{ matrix.config }}" \
             configs/release.config > .config
           make defconfig
 
