@@ -84,8 +84,12 @@ jobs:
         run: |
           f=feeds/luci/applications/luci-app-upnp/root/usr/share/rpcd/ucode/luci.upnp
           [ -f "$f" ] || { echo "luci.upnp not found at $f" >&2; exit 1; }
-          sed -i 's/th dport (\[0-9\]+) dnat ip to/th dport ([0-9]+) .*dnat ip to/' "$f"
-          grep -Fq 'th dport ([0-9]+) .*dnat ip to' "$f"
+          if grep -Fq 'counter packets [0-9]+ bytes [0-9]+' "$f"; then
+            echo "upstream already tolerates counters, skipping"
+          else
+            sed -i 's/th dport (\[0-9\]+) dnat ip to/th dport ([0-9]+) .*dnat ip to/' "$f"
+            grep -Fq 'th dport ([0-9]+) .*dnat ip to' "$f"
+          fi
 
       - name: Load repository signing key
         env:
