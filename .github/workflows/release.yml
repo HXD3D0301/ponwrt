@@ -74,6 +74,19 @@ jobs:
           ./scripts/feeds update -a
           ./scripts/feeds install -a
 
+      # luci-app-upnp parses "nft list chain inet fw4 upnp_prerouting" with a
+      # regex that expects "th dport N dnat ip to ...". miniupnpd-nftables also
+      # emits "counter packets N bytes N" before the dnat, so every rule is
+      # skipped and the LuCI page always reports "no active port maps".
+      # Still broken in openwrt/luci and immortalwrt/luci master; patch the
+      # feed copy here until it is fixed upstream.
+      - name: Patch luci.upnp nft parser
+        run: |
+          f=feeds/luci/applications/luci-app-upnp/root/usr/share/rpcd/ucode/luci.upnp
+          [ -f "$f" ] || { echo "luci.upnp not found at $f" >&2; exit 1; }
+          sed -i 's/th dport (\[0-9\]+) dnat ip to/th dport ([0-9]+) .*dnat ip to/' "$f"
+          grep -Fq 'th dport ([0-9]+) .*dnat ip to' "$f"
+
       - name: Load repository signing key
         env:
           PONWRT_APK_PRIVATE_KEY: ${{ secrets.PONWRT_APK_PRIVATE_KEY }}
