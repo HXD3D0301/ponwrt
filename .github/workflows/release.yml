@@ -73,14 +73,11 @@ jobs:
       - name: Install feeds
         run: |
           ./scripts/feeds update -a
+          # The packages feed also ships xray-core and feeds install keeps the
+          # first definition it sees. Drop the plain recipe before installing so
+          # the zray one (AN7581 EIP93 patched) is the only candidate.
+          rm -rf feeds/packages/net/xray-core
           ./scripts/feeds install -a
-
-      # Both the packages and zray feeds define xray-core; feeds install keeps
-      # the first one, which is the plain build. Drop that copy so the zray
-      # recipe (AN7581 EIP93 patched) is the only candidate.
-      - name: Prefer the Zray xray-core
-        run: |
-          rm -rf package/feeds/packages/xray-core
           test -d package/feeds/zray/xray-core
 
       # luci-app-upnp parses "nft list chain inet fw4 upnp_prerouting" with a
