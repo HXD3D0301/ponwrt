@@ -75,6 +75,14 @@ jobs:
           ./scripts/feeds update -a
           ./scripts/feeds install -a
 
+      # Both the packages and zray feeds define xray-core; feeds install keeps
+      # the first one, which is the plain build. Drop that copy so the zray
+      # recipe (AN7581 EIP93 patched) is the only candidate.
+      - name: Prefer the Zray xray-core
+        run: |
+          rm -rf package/feeds/packages/xray-core
+          test -d package/feeds/zray/xray-core
+
       # luci-app-upnp parses "nft list chain inet fw4 upnp_prerouting" with a
       # regex that expects "th dport N dnat ip to ...". miniupnpd-nftables also
       # emits "counter packets N bytes N" before the dnat, so every rule is
