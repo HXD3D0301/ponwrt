@@ -76,7 +76,7 @@ jobs:
           # The packages feed also ships xray-core and feeds install keeps the
           # first definition it sees. Drop the plain recipe before installing so
           # the zray one (AN7581 EIP93 patched) is the only candidate.
-          rm -rf feeds/packages/net/xray-core
+          rm -rf feeds/packages/net/xray-core feeds/kenzok8/xray-core
           ./scripts/feeds install -a
           test -d package/feeds/zray/xray-core
 

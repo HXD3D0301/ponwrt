@@ -1,3 +1,4 @@
+src-git zray https://github.com/altman08/luci-app-zray.git;zray
 src-git packages https://github.com/immortalwrt/packages.git
 src-git luci https://github.com/immortalwrt/luci.git
 src-git routing https://github.com/openwrt/routing.git
@@ -9,4 +10,3 @@ src-git pon_userspace https://github.com/pbs05/openwrt-pon-userspace.git
 #src-git oldpackages http://git.openwrt.org/packages.git
 #src-link custom /usr/src/openwrt/custom-feed
 src-git kenzok8 https://github.com/kenzok8/small.git
-src-git zray https://github.com/altman08/luci-app-zray.git;zray
