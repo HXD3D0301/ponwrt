@@ -113,6 +113,9 @@ jobs:
             "${{ matrix.config }}" \
             configs/release.config > .config
           make defconfig
+          # Show which recipe won for the packages that kept falling over.
+          grep -E 'CONFIG_PACKAGE_(xray-core|tc-full|kmod-crypto-hw-eip93|luci-app-passwall2)=' .config || true
+          ls -l package/feeds/*/xray-core 2>/dev/null || true
 
       - name: Download sources
         run: make download -j"$(nproc)"
