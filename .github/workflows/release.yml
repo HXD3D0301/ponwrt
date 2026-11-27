@@ -56,6 +56,12 @@ jobs:
         env:
           DEBIAN_FRONTEND: noninteractive
         run: |
+          # The runner image ships packages.microsoft.com, which intermittently
+          # returns 403 and fails 'apt-get update' with exit 100. Nothing we
+          # need comes from it, so drop the repo before updating.
+          sudo rm -f /etc/apt/sources.list.d/microsoft-prod.list \
+                     /etc/apt/sources.list.d/azure-cli.list \
+                     /etc/apt/sources.list.d/*microsoft* 2>/dev/null || true
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends \
             asciidoc autoconf automake autopoint binutils bison build-essential \
