@@ -1,0 +1,13 @@
+#!/bin/sh
+[ "$ACTION" = ifup -o "$ACTION" = ifupdate ] || exit 0
+
+# 若存在 PPPoE WAN 或配置了 PPPoE，坚决不添加任何 br-lan 假默认路由
+if [ "$(uci -q get network.wan.proto)" = "pppoe" ] || [ -d /sys/class/net/pppoe-wan ]; then
+    exit 0
+fi
+
+if [ "$INTERFACE" = "lan" ] || [ "$INTERFACE" = "lan6" ]; then
+    if ! ip -6 route show default 2>/dev/null | grep -q 'default'; then
+        ip -6 route replace default via fe80::1 dev br-lan 2>/dev/null
+    fi
+fi
