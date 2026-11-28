@@ -1,0 +1,46 @@
+# Put your custom commands here that should be executed once
+# the system init finished. By default this file does nothing.
+
+# 1. 仅当非 PPPoE 主路由（如作为纯旁路由）且缺失默认路由时才回退 fe80::1
+if [ "$(uci -q get network.wan.proto)" != "pppoe" ] && [ ! -d /sys/class/net/pppoe-wan ]; then
+    if ! ip -6 route show default 2>/dev/null | grep -q 'default'; then
+        ip -6 route replace default via fe80::1 dev br-lan 2>/dev/null
+    fi
+fi
+
+# 2. 重新加载网络缓冲与 conntrack 参数（sysctl.d 在启动早期可能被驱动覆盖）
+sysctl -p /etc/sysctl.d/99-custom-net-optimization.conf 2>/dev/null
+
+# 3. 提升网桥与有线口队列深度，消除突发丢包
+ip link set br-lan txqueuelen 5000 2>/dev/null
+for dev in lan1 lan2 lan3 lan4 eth0 eth1 pon0 pppoe-wan; do
+    ip link set "$dev" txqueuelen 5000 2>/dev/null
+done
+
+# 4. LLDP 链路本地组播放行 + 每个口当组播路由口
+echo 0x4000 > /sys/devices/virtual/net/br-lan/bridge/group_fwd_mask 2>/dev/null
+for eth_port in /sys/devices/virtual/net/br-lan/brif/lan* /sys/devices/virtual/net/br-lan/brif/eth* /sys/devices/virtual/net/br-lan/brif/pon*; do
+    [ -d "$eth_port" ] && echo 2 > "$eth_port/multicast_router" 2>/dev/null
+done
+
+# 5. 以太网核心硬中断分核（解放 CPU0）
+pin_irq() {
+    local irq_num
+    irq_num=$(awk -v name="$1" '$NF == name { gsub(":", "", $1); print $1; exit }' /proc/interrupts)
+    [ -n "$irq_num" ] && [ -w "/proc/irq/$irq_num/smp_affinity_list" ] && echo "$2" > "/proc/irq/$irq_num/smp_affinity_list" 2>/dev/null || true
+}
+pin_irq "airoha_eth.0" 1
+pin_irq "airoha_eth.4" 2
+
+# 6. 降低 PPE 流表硬件加速绑定门限（默认偏高，改为 5 pps）
+if [ -w /sys/kernel/debug/ppe/bind_rate ]; then
+    echo "5 5" > /sys/kernel/debug/ppe/bind_rate 2>/dev/null
+fi
+
+# 7. PPPoE GRO 与光纤心跳进程 OOM 保护
+ethtool -K pppoe-wan gro on 2>/dev/null
+for p in $(pgrep airoha-pond 2>/dev/null); do
+    echo -1000 > "/proc/$p/oom_score_adj" 2>/dev/null
+done
+
+exit 0

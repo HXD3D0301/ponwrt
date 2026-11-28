@@ -133,6 +133,10 @@ jobs:
           ./scripts/kconfig.pl + \
             "${{ matrix.config }}" \
             configs/release.config > .config
+          # BTF must not be disabled by DEBUG_INFO_REDUCED; force the KERNEL_*
+          # symbols even when an older config file is used.
+          sed -i '/^CONFIG_KERNEL_DEBUG_INFO_REDUCED=/d; /^# CONFIG_KERNEL_DEBUG_INFO_REDUCED is not set/d' .config
+          printf 'CONFIG_KERNEL_DEBUG_INFO=y\nCONFIG_KERNEL_DEBUG_INFO_BTF=y\nCONFIG_KERNEL_DEBUG_INFO_BTF_MODULES=y\nCONFIG_KERNEL_MODULE_ALLOW_BTF_MISMATCH=y\nCONFIG_KERNEL_KPROBES=y\nCONFIG_KERNEL_BPF_EVENTS=y\n' >> .config
           sed -i '/^CONFIG_DEVEL=/d; /^CONFIG_CCACHE=/d' .config
           printf 'CONFIG_DEVEL=y\nCONFIG_CCACHE=y\n' >> .config
           make defconfig
